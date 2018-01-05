@@ -8,6 +8,7 @@ import EmberObject, {
 } from '@ember/object';
 import Component from '@ember/component';
 import { on } from '@ember/object/evented';
+import { once } from '@ember/runloop';
 // import { getOwner } from '@ember/application';
 import getValue from './get-value';
 import { collapseKeysWithMap } from './collapse-keys';
@@ -120,6 +121,7 @@ export default function(observerBools, macroGenerator) {
 
     collapsedKeys.forEach((key, i) => {
       let shouldObserve = observerBools[i];
+      let macro = key;
       if (!shouldObserve) {
         key = getOriginalArrayDecorator(key, i);
       }
@@ -129,28 +131,44 @@ export default function(observerBools, macroGenerator) {
       mappedKeys.push(mappedKey);
       if (shouldObserve) {
         classProperties[`key${i}DidChange`] = observer(mappedKey, rewriteComputed);
+      } else {
+        let obsKeys = flattenKeys([macro]).map(k => 'context.' + k);
+
+        if (obsKeys.length > 0) {
+          classProperties[`key${i}DidChange`] = observer(...obsKeys, function() {
+            once(null, () => {
+              let { context } = this;
+
+              this.set(mappedKey, getValue({ context, macro, key: null }));
+            });
+          });
+        }
       }
     });
+
+    function setNonStrings(propertyInstance) {
+      let { key, context } = propertyInstance;
+      let properties = collapsedKeys.reduce((properties, macro, i) => {
+        if (typeof macro !== 'string') {
+          properties[i.toString()] = getValue({ context, macro, key });
+        }
+        return properties;
+      }, {});
+
+      setProperties(propertyInstance.nonStrings, properties);
+    }
 
     let ObserverClass = BaseClass.extend(classProperties, {
       // can't use rewriteComputed directly, maybe a bug
       // https://github.com/emberjs/ember.js/issues/15246
       onInit: on('init', function() {
+        setNonStrings(this);
         rewriteComputed.call(this);
       })
     });
 
     let cp = computed(...flattenKeys(keys), function(key) {
       let propertyInstance = findOrCreatePropertyInstance(this, ObserverClass, key, cp);
-
-      let properties = collapsedKeys.reduce((properties, macro, i) => {
-        if (typeof macro !== 'string') {
-          properties[i.toString()] = getValue({ context: this, macro, key });
-        }
-        return properties;
-      }, {});
-
-      setProperties(propertyInstance.nonStrings, properties);
 
       return get(propertyInstance, 'computed');
     }).readOnly();

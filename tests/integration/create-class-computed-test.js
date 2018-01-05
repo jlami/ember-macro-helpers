@@ -5,6 +5,7 @@ import computed from 'ember-macro-helpers/computed';
 import raw from 'ember-macro-helpers/raw';
 import { module, test } from 'qunit';
 import EmberObject from '@ember/object';
+import { run } from '@ember/runloop';
 import { A as emberA } from '@ember/array';
 import compute from 'ember-macro-test-helpers/compute';
 import destroy from '../helpers/destroy';
@@ -313,7 +314,7 @@ test('composing: both macros are class computed', function(assert) {
   ]);
 
   let { subject } = compute({
-    computed: filterBy(filterBy('array', 'key1', 'value1'), 'key2', 'value2'),
+    computed: filterBy(filterBy('array.[]', 'key1', 'value1'), 'key2', 'value2'),
     properties: {
       array,
       key1: 'test1',
@@ -333,7 +334,7 @@ test('composing: both macros are class computed', function(assert) {
 
   assert.deepEqual(subject.get('computed').mapBy('id'), [3]);
 
-  array.pushObject(EmberObject.create({ id: 4, test1: 'val2', test2: 'val2' }));
+  run(() => array.pushObject(EmberObject.create({ id: 4, test1: 'val2', test2: 'val2' })));
 
   assert.deepEqual(subject.get('computed').mapBy('id'), [3, 4]);
 });
