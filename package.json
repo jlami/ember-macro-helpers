@@ -37,7 +37,7 @@
     "ember-data": "^2.16.2",
     "ember-disable-prototype-extensions": "^1.1.2",
     "ember-load-initializers": "^1.0.0",
-    "ember-macro-test-helpers": "^3.1.0",
+    "ember-macro-test-helpers": "jlami/ember-macro-test-helpers#runloop",
     "ember-resolver": "^4.0.0",
     "ember-sinon": "^1.0.0",
     "ember-source": "~2.16.0",

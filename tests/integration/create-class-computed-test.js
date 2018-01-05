@@ -313,7 +313,7 @@ test('composing: both macros are class computed', function(assert) {
   ]);
 
   let { subject } = compute({
-    computed: filterBy(filterBy('array', 'key1', 'value1'), 'key2', 'value2'),
+    computed: filterBy(filterBy('array.[]', 'key1', 'value1'), 'key2', 'value2'),
     properties: {
       array,
       key1: 'test1',
@@ -333,7 +333,7 @@ test('composing: both macros are class computed', function(assert) {
 
   assert.deepEqual(subject.get('computed').mapBy('id'), [3]);
 
-  array.pushObject(EmberObject.create({ id: 4, test1: 'val2', test2: 'val2' }));
+  run(null, () => array.pushObject(EmberObject.create({ id: 4, test1: 'val2', test2: 'val2' })));
 
   assert.deepEqual(subject.get('computed').mapBy('id'), [3, 4]);
 });
